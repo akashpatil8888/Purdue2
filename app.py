@@ -8,7 +8,7 @@ st.write("Upload a bottle image to classify it as good or defective.")
 
 @st.cache_resource
 def load_model():
-    return YOLO("runs/classify/packaging_classifier/weights/best.pt")
+    return YOLO("best.pt")
 
 model = load_model()
 
