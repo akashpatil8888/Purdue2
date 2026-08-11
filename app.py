@@ -164,7 +164,7 @@ st.markdown(
 )
 
 st.write(
-    "Upload a bottle image to classify its condition as an upright or crushed bottle, "
+    "Upload an image of a clear bottle (no color) to classify its condition as an upright or crushed bottle, "
     "using a trained image classification model."
 )
 
