@@ -12,6 +12,10 @@ st.set_page_config(
 DISPLAY_WIDTH = 350
 DISPLAY_HEIGHT = 350
 
+# Create a counter used to reset the file uploader
+if "uploader_version" not in st.session_state:
+    st.session_state.uploader_version = 0
+
 # Page heading
 st.title("Bottle Quality Detector")
 st.write("Upload a bottle image to check whether it is upright or crushed.")
@@ -23,19 +27,19 @@ def load_model():
 
 model = load_model()
 
-# Image uploader
+# The key changes after Clear is clicked, creating a fresh uploader
 uploaded_file = st.file_uploader(
     "Choose a bottle photo",
-    type=["jpg", "jpeg", "png"]
+    type=["jpg", "jpeg", "png"],
+    key=f"bottle_uploader_{st.session_state.uploader_version}"
 )
 
 if uploaded_file is not None:
-    # Original image used by the model
+    # Original full-size image used by the model
     image = Image.open(uploaded_file).convert("RGB")
 
-    # Display-only preview:
-    # Every image appears inside the same 350 x 350 pixel box.
-    # Aspect ratio is preserved, with light-gray padding if needed.
+    # Fixed-size display preview only.
+    # The original image's proportions are preserved and empty space is light gray.
     preview = ImageOps.pad(
         image,
         (DISPLAY_WIDTH, DISPLAY_HEIGHT),
@@ -47,7 +51,7 @@ if uploaded_file is not None:
     # Create left and right columns
     col_left, col_right = st.columns([1, 1])
 
-    # LEFT SIDE: Fixed-size uploaded image preview
+    # LEFT: fixed-size image preview
     with col_left:
         st.subheader("Uploaded image")
 
@@ -57,19 +61,19 @@ if uploaded_file is not None:
             width=DISPLAY_WIDTH
         )
 
-    # RIGHT SIDE: Detailed prediction result
+    # RIGHT: detailed inspection result
     with col_right:
         st.subheader("Inspection result")
 
         with st.spinner("Analyzing image..."):
             result = model(image)[0]
 
-        # Get top prediction from the YOLO classification model
+        # Read the top classification prediction
         class_id = result.probs.top1
         model_label = result.names[class_id]
         confidence = float(result.probs.top1conf)
 
-        # Display user-friendly labels and descriptions
+        # Convert internal model labels to user-facing labels
         if model_label.lower() == "good":
             display_label = "Upright bottle"
             status = "PASSED"
@@ -77,7 +81,6 @@ if uploaded_file is not None:
                 "The bottle appears to be upright and in acceptable condition "
                 "based on the model's classification."
             )
-            message_type = "success"
         else:
             display_label = "Crushed bottle"
             status = "REVIEW REQUIRED"
@@ -85,13 +88,12 @@ if uploaded_file is not None:
                 "The bottle appears to be crushed or defective. "
                 "Please remove it from the approved bottle group for review."
             )
-            message_type = "error"
 
-        # Group all result information in one visual card
+        # Result card
         with st.container(border=True):
             st.markdown("### Bottle condition")
 
-            if message_type == "success":
+            if model_label.lower() == "good":
                 st.success(f"Status: {status}")
             else:
                 st.error(f"Status: {status}")
@@ -108,7 +110,14 @@ if uploaded_file is not None:
             st.divider()
 
             st.caption(f"Model classification: {model_label}")
-            st.caption("Confidence represents how certain the model is about this prediction.")
+            st.caption(
+                "Confidence represents how certain the model is about this prediction."
+            )
+
+        # Clear button
+        if st.button("Clear results / Upload another image"):
+            st.session_state.uploader_version += 1
+            st.rerun()
 
 else:
     st.info("Please upload a bottle image to begin.")
