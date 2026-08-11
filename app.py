@@ -300,10 +300,7 @@ st.markdown(
                 Department of Food Science website
             </a>.
         </p>
-        <p>
-            This tool is provided for educational and prototyping purposes and does not replace
-            Purdue University's approved quality assurance protocols or regulatory compliance procedures.
-        </p>
+        
     </div>
     """,
     unsafe_allow_html=True,
